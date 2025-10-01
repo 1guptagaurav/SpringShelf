@@ -1,6 +1,7 @@
 package com.Library.SpringShelf.Model;
 
 
+import com.Library.SpringShelf.Utils.StringCryptoConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,6 +29,7 @@ public class User {
     private String lastname;
 
     @Column(nullable = false,unique = true)
+    @Convert(converter = StringCryptoConverter.class)
     private String email;
 
     @Column(nullable = false)

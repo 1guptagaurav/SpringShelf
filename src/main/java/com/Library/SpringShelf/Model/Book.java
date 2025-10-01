@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Table(name="books")
 @Getter
@@ -27,7 +29,12 @@ public class Book {
 
     private String description;
 
+    @OneToMany(mappedBy = "book")
+    private List<BookCopy> copies;
+
     @Column(nullable = false,length = 13)
     private String isbn;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean borrowable = true;
 }
