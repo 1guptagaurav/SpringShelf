@@ -21,9 +21,9 @@ public class TransactionService {
     private static final int MAX_BORROWED_BOOKS = 12;
 
     @Transactional
-    public TransactionDto borrowBook(BorrowRequestDto borrowRequest) {
-        User user = userRepository.findById(borrowRequest.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public TransactionDto borrowBook(BorrowRequestDto borrowRequest,String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
         BookCopy bookCopy = bookCopyRepository.findById(borrowRequest.getBookCopyId())
                 .orElseThrow(() -> new RuntimeException("Book copy not found"));
 
@@ -58,7 +58,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionDto returnBook(ReturnRequestDto returnRequest) {
+    public TransactionDto returnBook(ReturnRequestDto returnRequest, String username) {
         BookCopy bookCopy = bookCopyRepository.findById(returnRequest.getBookCopyId())
                 .orElseThrow(() -> new RuntimeException("Book copy not found"));
 
@@ -66,6 +66,13 @@ public class TransactionService {
         BorrowingTransaction transaction = transactionRepository.findByBookCopyAndStatus(bookCopy, TransactionStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("No active borrowing record found for this book copy."));
 
+        boolean isBorrower = transaction.getBorrower().getEmail().equals(username);
+        boolean isStaff = transaction.getBorrower().getRoles().stream()
+                .anyMatch(role -> role.getRole() == Rolename.ADMIN || role.getRole() == Rolename.LIBRARIAN);
+
+        if (!isBorrower && !isStaff) {
+            throw new RuntimeException("You are not authorized to return this book.");
+        }
         // --- Update Transaction and Book Status ---
         bookCopy.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
         bookCopyRepository.save(bookCopy);

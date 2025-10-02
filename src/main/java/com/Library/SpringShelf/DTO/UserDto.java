@@ -1,4 +1,4 @@
-package com.Library.SpringShelf.Model;
+package com.Library.SpringShelf.DTO;
 
 import lombok.Data;
 

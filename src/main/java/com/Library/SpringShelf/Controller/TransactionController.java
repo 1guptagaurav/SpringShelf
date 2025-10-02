@@ -7,6 +7,7 @@ import com.Library.SpringShelf.Service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,14 +18,16 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("/borrow")
-    public ResponseEntity<TransactionDto> borrowBook(@Valid @RequestBody BorrowRequestDto borrowRequest) {
-        TransactionDto transaction = transactionService.borrowBook(borrowRequest);
+    public ResponseEntity<TransactionDto> borrowBook(@Valid @RequestBody BorrowRequestDto borrowRequest, Authentication authentication ) {
+        String username = authentication.getName();
+        TransactionDto transaction = transactionService.borrowBook(borrowRequest,username);
         return ResponseEntity.ok(transaction);
     }
 
     @PostMapping("/return")
-    public ResponseEntity<TransactionDto> returnBook(@Valid @RequestBody ReturnRequestDto returnRequest) {
-        TransactionDto transaction = transactionService.returnBook(returnRequest);
+    public ResponseEntity<TransactionDto> returnBook(@Valid @RequestBody ReturnRequestDto returnRequest,Authentication authentication) {
+        String username = authentication.getName();
+        TransactionDto transaction = transactionService.returnBook(returnRequest,username);
         return ResponseEntity.ok(transaction);
     }
 }

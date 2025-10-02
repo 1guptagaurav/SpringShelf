@@ -2,10 +2,12 @@ package com.Library.SpringShelf.Config;
 
 import com.Library.SpringShelf.Service.JwtService;
 import com.Library.SpringShelf.Service.MyUserDetailService;
+import com.Library.SpringShelf.Service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,13 +20,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    ApplicationContext context;
+    private final ApplicationContext context;
+    private final JwtService jwtService;
+    private final MyUserDetailService userDetailService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -38,9 +40,20 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String username = null;
 
+
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            username = jwtService.extractUserName(token);
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "This token has been invalidated by logout.");
+                return; // Stop the filter chain
+            }
+
+            try {
+                username = jwtService.extractUserName(token);
+            } catch (Exception e) {
+                // Handle expired or invalid tokens
+            }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

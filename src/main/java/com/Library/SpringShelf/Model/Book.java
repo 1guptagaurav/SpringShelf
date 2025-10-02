@@ -29,7 +29,7 @@ public class Book {
 
     private String description;
 
-    @OneToMany(mappedBy = "book")
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookCopy> copies;
 
     @Column(nullable = false,length = 13)

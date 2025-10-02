@@ -12,6 +12,7 @@ public interface BorrowingTransactionRepository extends JpaRepository<BorrowingT
     // Find an ongoing transaction for a specific book copy
     Optional<BorrowingTransaction> findByBookCopyAndStatus(BookCopy bookCopy, TransactionStatus status);
 
+    void deleteAllByBorrower(User borrower);
     // Count how many books a user currently has borrowed
     int countByBorrowerAndStatus(User user, TransactionStatus status);
 }

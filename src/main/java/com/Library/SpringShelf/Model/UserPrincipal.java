@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
 
@@ -15,16 +16,22 @@ public class UserPrincipal implements UserDetails {
         this.user = user;
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        // This is the problem. Every user gets the same, hardcoded authority "USER".
-        // The actual roles from the database (user.getRoles()) are ignored.
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
-    }
-//    @Override
+//    @Override2
+//    public Collection<? extends GrantedAuthority> getAuthorities() {
+//        // This is the problem. Every user gets the same, hardcoded authority "USER".
+//        // The actual roles from the database (user.getRoles()) are ignored.
+//        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+//    }
+//    @Override1
 //    public Collection<? extends GrantedAuthority> getAuthorities() {
 //        return Collections.singleton(new SimpleGrantedAuthority("MEMBER"));
 //    }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRole().name()))
+                .collect(Collectors.toList());
+    }
 
     @Override
     public String getPassword() {
