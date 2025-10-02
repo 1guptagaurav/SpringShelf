@@ -11,6 +11,9 @@ import com.Library.SpringShelf.Repository.BookRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,27 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookCopyRepository bookCopyRepository;
+
+    public Page<BookResponseDto> searchBooks(String title, String author, Pageable pageable) {
+        // Start with a specification that does nothing (returns all)
+        Specification<Book> spec = Specification.where(null);
+
+        // If a title is provided, add the title criteria to our specification
+        if (title != null && !title.isEmpty()) {
+            spec = spec.and(BookSpecification.titleContains(title));
+        }
+
+        // If an author is provided, add the author criteria
+        if (author != null && !author.isEmpty()) {
+            spec = spec.and(BookSpecification.authorContains(author));
+        }
+
+        // Execute the query with the combined specification and pageable info
+        Page<Book> bookPage = bookRepository.findAll(spec, pageable);
+
+        return bookPage.map(this::convertToBookResponseDto);
+    }
+
 
     @Transactional
     public void addBook(BookDto bookDto){
@@ -56,11 +80,9 @@ public class BookService {
         }
     }
 
-    public List<BookResponseDto> getAllBooks() {
-        List<Book> books = bookRepository.findAll();
-        return books.stream()
-                .map(this::convertToBookResponseDto)
-                .toList();
+    public Page<BookResponseDto> getAllBooks(Pageable pageable) {
+        Page<Book> bookPage = bookRepository.findAll(pageable);
+        return bookPage.map(this::convertToBookResponseDto);
     }
 
     private BookResponseDto convertToBookResponseDto(Book book) {

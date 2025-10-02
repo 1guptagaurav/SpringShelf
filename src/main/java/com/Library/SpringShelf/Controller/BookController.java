@@ -5,6 +5,8 @@ import com.Library.SpringShelf.DTO.BookResponseDto;
 import com.Library.SpringShelf.Service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,11 +29,21 @@ public class BookController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<BookResponseDto>> searchBooks(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            Pageable pageable) {
+
+        Page<BookResponseDto> booksPage = bookService.searchBooks(title, author, pageable);
+        return ResponseEntity.ok(booksPage);
+    }
+
     // This was already good
     @GetMapping
-    public ResponseEntity<List<BookResponseDto>> getAllBooks() {
-        List<BookResponseDto> books = bookService.getAllBooks();
-        return ResponseEntity.ok(books);
+    public ResponseEntity<Page<BookResponseDto>> getAllBooks(Pageable pageable) {
+        Page<BookResponseDto> booksPage = bookService.getAllBooks(pageable);
+        return ResponseEntity.ok(booksPage);
     }
 
     // Use a simpler, more standard path

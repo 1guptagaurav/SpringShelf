@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,7 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final BookCopyRepository bookCopyRepository;
     private static final int MAX_BORROWED_BOOKS = 12;
+    private static final double LATE_FEE_PER_DAY = 10.0;
 
     @Transactional
     public TransactionDto borrowBook(BorrowRequestDto borrowRequest,String username) {
@@ -81,9 +83,17 @@ public class TransactionService {
         // Check if the book is returned late
         if (LocalDate.now().isAfter(transaction.getDueDate())) {
             transaction.setStatus(TransactionStatus.OVERDUE);
-            // Future logic for calculating fines can go here
+
+            // Calculate the number of days the book is late
+            long daysOverdue = ChronoUnit.DAYS.between(transaction.getDueDate(), transaction.getReturnDate());
+
+            // Calculate and set the late fee
+            double fee = daysOverdue * LATE_FEE_PER_DAY;
+            transaction.setLateFee(fee);
+
         } else {
             transaction.setStatus(TransactionStatus.RETURNED);
+            transaction.setLateFee(0.0);
         }
 
         BorrowingTransaction savedTransaction = transactionRepository.save(transaction);
@@ -101,6 +111,7 @@ public class TransactionService {
         dto.setBorrowDate(transaction.getBorrowDate());
         dto.setDueDate(transaction.getDueDate());
         dto.setReturnDate(transaction.getReturnDate());
+        dto.setLateFee(transaction.getLateFee());
         dto.setStatus(transaction.getStatus());
         return dto;
     }

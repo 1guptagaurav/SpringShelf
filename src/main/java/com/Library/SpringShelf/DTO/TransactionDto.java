@@ -15,5 +15,6 @@ public class TransactionDto {
     private LocalDateTime borrowDate;
     private LocalDate dueDate;
     private LocalDate returnDate;
+    private Double lateFee;
     private TransactionStatus status;
 }

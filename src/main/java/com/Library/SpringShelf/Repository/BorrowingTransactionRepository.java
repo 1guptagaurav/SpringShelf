@@ -5,14 +5,20 @@ import com.Library.SpringShelf.Model.BorrowingTransaction;
 import com.Library.SpringShelf.Model.TransactionStatus;
 import com.Library.SpringShelf.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface BorrowingTransactionRepository extends JpaRepository<BorrowingTransaction, Long> {
 
-    // Find an ongoing transaction for a specific book copy
+
     Optional<BorrowingTransaction> findByBookCopyAndStatus(BookCopy bookCopy, TransactionStatus status);
 
     void deleteAllByBorrower(User borrower);
-    // Count how many books a user currently has borrowed
+
     int countByBorrowerAndStatus(User user, TransactionStatus status);
+
+    List<BorrowingTransaction> findByStatusAndDueDateBefore(TransactionStatus status, LocalDate date);
+
 }
