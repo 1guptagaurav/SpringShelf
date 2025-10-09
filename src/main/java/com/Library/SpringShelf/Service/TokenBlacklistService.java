@@ -10,7 +10,7 @@ import java.util.Set;
 @Service
 public class TokenBlacklistService {
 
-    // For a real-world app, replace this with a Redis or other distributed cache.
+    // use Redis or other distributed cache.
     private final Set<String> blacklist = Collections.synchronizedSet(new HashSet<>());
 
     public void blacklistToken(String token) {

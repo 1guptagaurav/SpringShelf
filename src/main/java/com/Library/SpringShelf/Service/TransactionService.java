@@ -1,8 +1,9 @@
 package com.Library.SpringShelf.Service;
 
-import com.Library.SpringShelf.DTO.BorrowRequestDto;
-import com.Library.SpringShelf.DTO.ReturnRequestDto;
-import com.Library.SpringShelf.DTO.TransactionDto;
+import com.Library.SpringShelf.Aop.Auditable;
+import com.Library.SpringShelf.Dto.BorrowRequestDto;
+import com.Library.SpringShelf.Dto.ReturnRequestDto;
+import com.Library.SpringShelf.Dto.TransactionDto;
 import com.Library.SpringShelf.Model.*;
 import com.Library.SpringShelf.Repository.*;
 import lombok.RequiredArgsConstructor;
@@ -19,32 +20,31 @@ public class TransactionService {
     private final BorrowingTransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final BookCopyRepository bookCopyRepository;
-    private static final int MAX_BORROWED_BOOKS = 12;
+    private static final int MAX_BORROWED_BOOKS = 5;
     private static final double LATE_FEE_PER_DAY = 10.0;
 
     @Transactional
+    @Auditable(action = "BOOK_BORROWED")
     public TransactionDto borrowBook(BorrowRequestDto borrowRequest,String username) {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
         BookCopy bookCopy = bookCopyRepository.findById(borrowRequest.getBookCopyId())
                 .orElseThrow(() -> new RuntimeException("Book copy not found"));
 
-        // --- Business Rule Validations ---
-        // 1. Check if the book is borrowable at all
         if (!bookCopy.getBook().isBorrowable()) {
             throw new RuntimeException("This book is for reference only and cannot be borrowed.");
         }
-        // 2. Check if the copy is available
+
         if (bookCopy.getAvailabilityStatus() != AvailabilityStatus.AVAILABLE) {
             throw new RuntimeException("Book copy is not available for borrowing.");
         }
-        // 3. Check if the user has reached their borrowing limit
+
         int activeBorrows = transactionRepository.countByBorrowerAndStatus(user, TransactionStatus.ACTIVE);
         if (activeBorrows >= MAX_BORROWED_BOOKS) {
             throw new RuntimeException("User has reached the maximum borrowing limit of " + MAX_BORROWED_BOOKS + " books.");
         }
 
-        // --- Create Transaction and Update Status ---
+
         bookCopy.setAvailabilityStatus(AvailabilityStatus.BORROWED);
         bookCopyRepository.save(bookCopy);
 
@@ -60,11 +60,12 @@ public class TransactionService {
     }
 
     @Transactional
+    @Auditable(action = "BOOK_RETURNED")
     public TransactionDto returnBook(ReturnRequestDto returnRequest, String username) {
         BookCopy bookCopy = bookCopyRepository.findById(returnRequest.getBookCopyId())
                 .orElseThrow(() -> new RuntimeException("Book copy not found"));
 
-        // Find the active transaction for this book copy
+
         BorrowingTransaction transaction = transactionRepository.findByBookCopyAndStatus(bookCopy, TransactionStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("No active borrowing record found for this book copy."));
 
@@ -75,22 +76,19 @@ public class TransactionService {
         if (!isBorrower && !isStaff) {
             throw new RuntimeException("You are not authorized to return this book.");
         }
-        // --- Update Transaction and Book Status ---
+
         bookCopy.setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
         bookCopyRepository.save(bookCopy);
 
         transaction.setReturnDate(LocalDate.now());
-        // Check if the book is returned late
         if (LocalDate.now().isAfter(transaction.getDueDate())) {
             transaction.setStatus(TransactionStatus.OVERDUE);
 
-            // Calculate the number of days the book is late
             long daysOverdue = ChronoUnit.DAYS.between(transaction.getDueDate(), transaction.getReturnDate());
 
-            // Calculate and set the late fee
+
             double fee = daysOverdue * LATE_FEE_PER_DAY;
             transaction.setLateFee(fee);
-
         } else {
             transaction.setStatus(TransactionStatus.RETURNED);
             transaction.setLateFee(0.0);
@@ -100,7 +98,7 @@ public class TransactionService {
         return convertToDto(savedTransaction);
     }
 
-    // Helper to convert entity to DTO
+
     private TransactionDto convertToDto(BorrowingTransaction transaction) {
         TransactionDto dto = new TransactionDto();
         dto.setId(transaction.getId());

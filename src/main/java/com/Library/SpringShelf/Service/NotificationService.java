@@ -21,12 +21,9 @@ public class NotificationService {
     private final BorrowingTransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+    private final EmailService emailService;
 
-    /**
-     * This task runs every day at 9:00 AM.
-     * It finds all active transactions that are past their due date and sends a reminder.
-     */
-    @Scheduled(cron = "0 0 9 * * *") // Runs at 9:00:00 AM every day
+    @Scheduled(cron = "0 0 9 * * *")
     public void sendOverdueReminders() {
         logger.info("Running scheduled task: Sending overdue reminders...");
         List<BorrowingTransaction> overdueTransactions = transactionRepository
@@ -41,17 +38,17 @@ public class NotificationService {
             User borrower = transaction.getBorrower();
             String bookTitle = transaction.getBookCopy().getBook().getTitle();
 
-            // In a real application, you would use an email service here.
-            // For now, we'll just log it to the console.
-            logger.info("Sending reminder to {}: Book '{}' is overdue.", borrower.getEmail(), bookTitle);
+            String subject = "Overdue Book Reminder: " + bookTitle;
+            String text = "Dear " + borrower.getFirstname() + ",\n\nThis is a friendly reminder that the book '"
+                    + bookTitle + "' which you borrowed on " + transaction.getBorrowDate().toLocalDate()
+                    + " is overdue. Please return it at your earliest convenience.\n\nThank you,\nSpringShelf Library";
+
+            emailService.sendSimpleMessage(borrower.getEmail(), subject, text);
         }
     }
 
-    /**
-     * This task runs every Monday at 10:00 AM.
-     * It finds users who haven't borrowed a book in the last 30 days and sends a suggestion.
-     */
-    @Scheduled(cron = "0 0 10 * * MON") // Runs at 10:00:00 AM every Monday
+
+    @Scheduled(cron = "0 0 10 * * MON")
     public void sendInactiveUserSuggestions() {
         logger.info("Running scheduled task: Sending suggestions to inactive users...");
         LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
@@ -63,9 +60,12 @@ public class NotificationService {
         }
 
         for (User user : inactiveUsers) {
-            // In a real application, you would find book suggestions and email them.
-            // For now, we'll just log it.
-            logger.info("Sending activity suggestion to inactive user: {}", user.getEmail());
+
+            String subject = "We Miss You at SpringShelf Library!";
+            String text = "Dear " + user.getFirstname() + ",\n\nWe've noticed you haven't borrowed a book in a while. "
+                    + "Come check out our new arrivals!\n\nBest,\nSpringShelf Library";
+
+            emailService.sendSimpleMessage(user.getEmail(), subject, text);
         }
     }
 }

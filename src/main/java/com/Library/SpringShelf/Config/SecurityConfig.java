@@ -36,8 +36,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // --- THIS IS THE FIX ---
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/error").permitAll()
+                        .requestMatchers("/api/auth/**",
+                                "/error",
+                                "/actuator/health",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/books/**").permitAll() // Anyone can VIEW books
                         .requestMatchers("/api/books/**").hasAnyRole("LIBRARIAN", "ADMIN") // Only staff can ADD/UPDATE/DELETE books
                         .requestMatchers("/api/transactions/**").authenticated() // Only staff can borrow/return

@@ -1,13 +1,13 @@
 package com.Library.SpringShelf.Service;
 
-import com.Library.SpringShelf.DTO.ChangePasswordRequestDto;
-import com.Library.SpringShelf.DTO.UserLoginDTO;
-import com.Library.SpringShelf.DTO.UserRegistrationDto;
+import com.Library.SpringShelf.Dto.ChangePasswordRequestDto;
+import com.Library.SpringShelf.Dto.UserLoginDTO;
+import com.Library.SpringShelf.Dto.UserRegistrationDto;
 import com.Library.SpringShelf.Exception.ResourceNotFoundException;
 import com.Library.SpringShelf.Model.Role;
 import com.Library.SpringShelf.Model.Rolename;
 import com.Library.SpringShelf.Model.User;
-import com.Library.SpringShelf.DTO.UserDto;
+import com.Library.SpringShelf.Dto.UserDto;
 import com.Library.SpringShelf.Repository.BorrowingTransactionRepository;
 import com.Library.SpringShelf.Repository.RoleRepository;
 import com.Library.SpringShelf.Repository.UserRepository;
@@ -18,9 +18,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.Library.SpringShelf.Aop.Auditable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,8 +32,11 @@ public class UserService {
     private final AuthenticationManager authManager;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder; // Inject the PasswordEncoder bean from SecurityConfig
+    private final PasswordEncoder passwordEncoder;
     private final BorrowingTransactionRepository transactionRepository;
+
+    @Transactional
+    @Auditable(action = "USER_REGISTERED")
     public UserDto register(UserRegistrationDto userRegistrationDto) {
         String email = userRegistrationDto.getEmail().toLowerCase();
         if (userRepository.findByEmail(email).isPresent()) {
@@ -44,11 +47,9 @@ public class UserService {
         user.setLastname(userRegistrationDto.getLastname() == null || userRegistrationDto.getLastname().isBlank() ? "LNU" : userRegistrationDto.getLastname());
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(userRegistrationDto.getPassword()));
-
         Role memberRole = roleRepository.findByRole(Rolename.MEMBER)
                 .orElseThrow(() -> new RuntimeException("Error: Default role MEMBER is not found."));
         user.setRoles(Set.of(memberRole));
-
         User savedUser = userRepository.save(user);
         return convertToUserDto(savedUser);
     }
@@ -56,7 +57,7 @@ public class UserService {
     public String login(UserLoginDTO userLoginDTO) {
         Authentication authentication = authManager
                 .authenticate(new UsernamePasswordAuthenticationToken(userLoginDTO.getEmail().toLowerCase(), userLoginDTO.getPassword()));
-        if (authentication.isAuthenticated()) {
+        if (authentication.isAuthenticated()){
             return jwtService.generateToken(userLoginDTO.getEmail());
         }
         throw new RuntimeException("Authentication failed");
@@ -91,6 +92,7 @@ public class UserService {
     }
 
     @Transactional
+    @Auditable(action = "USER_PROFILE_UPDATED")
     public UserDto updateUser(Long id, UserDto userDto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -118,6 +120,7 @@ public class UserService {
     }
 
     @Transactional
+    @Auditable(action = "USER_DELETED")
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -126,6 +129,7 @@ public class UserService {
     }
 
     @Transactional
+    @Auditable(action = "USER_PASSWORD_CHANGED")
     public void changePassword(String username, ChangePasswordRequestDto request) {
         // 1. Get the currently authenticated user
         User user = userRepository.findByEmail(username)

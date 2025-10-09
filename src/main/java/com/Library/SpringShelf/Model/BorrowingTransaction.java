@@ -28,11 +28,11 @@ public class BorrowingTransaction {
     @Column(nullable = false)
     private LocalDate dueDate;
 
-    @Column(columnDefinition = "DECIMAL(5, 2) DEFAULT 0.00") // e.g., 999.99
+    @Column(columnDefinition = "DECIMAL(5, 2) DEFAULT 0.00")
     private Double lateFee = 0.0;
 
 
-    private LocalDate returnDate; // Null until the book is returned
+    private LocalDate returnDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

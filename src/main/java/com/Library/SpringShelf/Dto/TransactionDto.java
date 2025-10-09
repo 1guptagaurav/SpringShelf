@@ -1,4 +1,4 @@
-package com.Library.SpringShelf.DTO;
+package com.Library.SpringShelf.Dto;
 
 import com.Library.SpringShelf.Model.TransactionStatus;
 import com.Library.SpringShelf.Utils.EmailMaskingSerializer;

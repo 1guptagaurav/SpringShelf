@@ -1,4 +1,4 @@
-package com.Library.SpringShelf.DTO;
+package com.Library.SpringShelf.Dto;
 
 import com.Library.SpringShelf.Utils.EmailMaskingSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

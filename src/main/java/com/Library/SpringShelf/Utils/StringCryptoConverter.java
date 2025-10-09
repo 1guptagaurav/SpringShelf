@@ -20,7 +20,6 @@ public class StringCryptoConverter implements AttributeConverter<String, String>
     private final Key key;
 
     public StringCryptoConverter(@Value("${app.encryption.key}") String secret) {
-        // Initialize the encryption key from application.properties
         this.key = new SecretKeySpec(secret.getBytes(), "AES");
     }
 
@@ -41,7 +40,6 @@ public class StringCryptoConverter implements AttributeConverter<String, String>
 
     @Override
     public String convertToEntityAttribute(String dbData) {
-        // This method is called when reading data FROM the database (DECRYPT)
         if (dbData == null) {
             return null;
         }

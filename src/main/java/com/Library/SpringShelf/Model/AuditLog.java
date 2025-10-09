@@ -14,21 +14,19 @@ public class AuditLog {
     private Long id;
 
     @Column(nullable = false)
-    private String username; // Who performed the action
-
+    private String username;
     @Column(nullable = false)
-    private String action; // What action was performed
+    private String action;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime timestamp; // When it happened
+    private LocalDateTime timestamp;
 
     @Lob
     @Column(columnDefinition = "TEXT")
-    private String details; // JSON details of the action
+    private String details;
 
     @PrePersist
     public void onPrePersist() {
-        // Automatically set the timestamp before saving
         this.timestamp = LocalDateTime.now();
     }
 }

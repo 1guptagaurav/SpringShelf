@@ -1,4 +1,4 @@
-package com.Library.SpringShelf.DTO;
+package com.Library.SpringShelf.Dto;
 
 import lombok.Data;
 @Data

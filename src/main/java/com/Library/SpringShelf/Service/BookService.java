@@ -1,23 +1,21 @@
 package com.Library.SpringShelf.Service;
 
-import com.Library.SpringShelf.DTO.BookDto;
-import com.Library.SpringShelf.DTO.BookResponseDto;
+import com.Library.SpringShelf.Aop.Auditable;
+import com.Library.SpringShelf.Dto.BookDto;
+import com.Library.SpringShelf.Dto.BookResponseDto;
 import com.Library.SpringShelf.Exception.ResourceNotFoundException;
 import com.Library.SpringShelf.Model.AvailabilityStatus;
 import com.Library.SpringShelf.Model.Book;
 import com.Library.SpringShelf.Model.BookCopy;
 import com.Library.SpringShelf.Repository.BookCopyRepository;
 import com.Library.SpringShelf.Repository.BookRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,6 +48,7 @@ public class BookService {
 
 
     @Transactional
+    @Auditable(action = "BOOK_ADDED")
     public void addBook(BookDto bookDto){
         Optional<BookCopy> bookCopyAvailable=bookCopyRepository.findByBarcode(bookDto.getBarcode());
         if(bookCopyAvailable.isPresent()){
@@ -101,20 +100,21 @@ public class BookService {
         return dto;
     }
 
-    public BookResponseDto getBookById(Long id) { // Renamed from searchBookById
+    public BookResponseDto getBookById(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
         return convertToBookResponseDto(book);
     }
 
     public List<BookResponseDto> getAvailableBooks() {
-        List<Book> availableBooks = bookRepository.findBooksWithAvailableCopies();
+        List<Book> availableBooks = bookRepository.findBooksWithAvailableCopies(AvailabilityStatus.AVAILABLE);
         return availableBooks.stream()
                 .map(this::convertToBookResponseDto)
                 .toList();
     }
 
     @Transactional
+    @Auditable(action = "BOOK_DETAILS_UPDATED")
     public BookResponseDto updateBook(Long id, BookDto bookRequest) {
         // 1. Find the existing book or throw an exception
         Book existingBook = bookRepository.findById(id)
